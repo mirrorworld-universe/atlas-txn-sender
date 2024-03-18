@@ -20,7 +20,6 @@ RUN apt update \
 
 ARG APP_NAME
 WORKDIR /app
-
 ENV RUST_BACKTRACE="full"
 
 # Build the application.
