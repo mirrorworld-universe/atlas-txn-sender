@@ -18,7 +18,6 @@ RUN apt update \
     && apt clean \
     && rm -rf /var/lib/apt/lists/* \
 
-ARG APP_NAME
 WORKDIR /app
 ENV RUST_BACKTRACE="full"
 
@@ -34,7 +33,7 @@ RUN --mount=type=bind,source=src,target=src \
     --mount=type=bind,source=Cargo.lock,target=Cargo.lock \
     --mount=type=cache,target=/app/target/ \
     --mount=type=cache,target=/usr/local/cargo/registry/ \
-    set -e && cargo build --locked --release && cp ./target/release/$APP_NAME /bin/server
+    set -e && cargo build --locked --release && cp ./target/release/atlas_txn_sender /bin/server
 
 ################################################################################
 # Create a new stage for running the application that contains the minimal
