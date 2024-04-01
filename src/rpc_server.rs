@@ -68,6 +68,7 @@ impl AtlasTxnSenderImpl {
 #[async_trait]
 impl AtlasTxnSenderServer for AtlasTxnSenderImpl {
     async fn health(&self) -> String {
+        println!("HERE is health");
         "ok".to_string()
     }
     async fn send_transaction(
@@ -76,6 +77,7 @@ impl AtlasTxnSenderServer for AtlasTxnSenderImpl {
         params: RpcSendTransactionConfig,
         request_metadata: Option<RequestMetadata>,
     ) -> RpcResult<String> {
+        println!("HERE is send_transaction");
         let sent_at = Instant::now();
         let api_key = request_metadata
             .clone()
