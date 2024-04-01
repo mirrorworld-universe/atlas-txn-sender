@@ -39,7 +39,10 @@ struct AtlasTxnSenderEnv {
     tpu_connection_pool_size: Option<usize>,
     x_token: Option<String>,
     num_leaders: Option<usize>,
+    leader_offset: Option<i64>,
     txn_sender_threads: Option<usize>,
+    max_txn_send_retries: Option<usize>,
+    txn_send_retry_interval: Option<usize>,
 }
 
 // Defualt on RPC is 4
@@ -108,20 +111,26 @@ async fn main() -> anyhow::Result<()> {
     let transaction_store = Arc::new(TransactionStoreImpl::new());
     let solana_rpc = Arc::new(GrpcGeyserImpl::new(client));
     let rpc_client = Arc::new(RpcClient::new(env.rpc_url.unwrap()));
-    let num_leaders = env.num_leaders.unwrap_or(4);
+    let num_leaders = env.num_leaders.unwrap_or(2);
+    let leader_offset = env.leader_offset.unwrap_or(0);
     let leader_tracker = Arc::new(LeaderTrackerImpl::new(
         rpc_client,
         solana_rpc.clone(),
         num_leaders,
+        leader_offset,
     ));
+    let txn_send_retry_interval_seconds = env.txn_send_retry_interval.unwrap_or(2);
     let txn_sender = Arc::new(TxnSenderImpl::new(
         leader_tracker,
-        transaction_store,
+        transaction_store.clone(),
         connection_cache,
         solana_rpc,
         env.txn_sender_threads.unwrap_or(4),
+        txn_send_retry_interval_seconds,
     ));
-    let atlas_txn_sender = AtlasTxnSenderImpl::new(txn_sender);
+    let max_txn_send_retries = env.max_txn_send_retries.unwrap_or(5);
+    let atlas_txn_sender =
+        AtlasTxnSenderImpl::new(txn_sender, transaction_store, max_txn_send_retries);
     let handle = server.start(atlas_txn_sender.into_rpc());
     handle.stopped().await;
     Ok(())
