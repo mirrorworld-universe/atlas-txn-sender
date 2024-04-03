@@ -15,7 +15,7 @@ use serde::Deserialize;
 use solana_rpc_client_api::config::RpcSendTransactionConfig;
 use solana_sdk::transaction::VersionedTransaction;
 use solana_transaction_status::UiTransactionEncoding;
-use tracing::error;
+use tracing::{error, info};
 
 use crate::{
     errors::invalid_request,
@@ -78,6 +78,7 @@ impl AtlasTxnSenderServer for AtlasTxnSenderImpl {
         request_metadata: Option<RequestMetadata>,
     ) -> RpcResult<String> {
         println!("HERE is send_transaction");
+        info!("start send transactions: tnx: {}, params: {:?}, request_metadata: {:?}", txn, params, request_metadata);
         let sent_at = Instant::now();
         let api_key = request_metadata
             .clone()
@@ -98,12 +99,14 @@ impl AtlasTxnSenderServer for AtlasTxnSenderImpl {
                     (wire_transaction, versioned_transaction)
                 }
                 Err(e) => {
+                    error!("decode and deserialize error: {}", &e.to_string());
                     return Err(invalid_request(&e.to_string()));
                 }
             };
         let signature = versioned_transaction.signatures[0].to_string();
         if self.transaction_store.has_signature(&signature) {
             statsd_count!("duplicate_transaction", 1, "api_key" => &api_key);
+            error!("duplicate_transaction, tnx: {}, signature: {}", txn, signature);
             return Ok(signature);
         }
         let transaction = TransactionData {
@@ -123,6 +126,7 @@ impl AtlasTxnSenderServer for AtlasTxnSenderImpl {
             start.elapsed(),
             "api_key" => &api_key
         );
+        info!("sent transaction signature: {}", signature);
         Ok(signature)
     }
 }
