@@ -106,7 +106,7 @@ impl AtlasTxnSenderServer for AtlasTxnSenderImpl {
         let signature = versioned_transaction.signatures[0].to_string();
         if self.transaction_store.has_signature(&signature) {
             statsd_count!("duplicate_transaction", 1, "api_key" => &api_key);
-            error!("duplicate_transaction, tnx: {}, signature: {}", txn, signature);
+            error!("duplicate_transaction, signature: {}", signature.clone());
             return Ok(signature);
         }
         let transaction = TransactionData {
@@ -126,7 +126,7 @@ impl AtlasTxnSenderServer for AtlasTxnSenderImpl {
             start.elapsed(),
             "api_key" => &api_key
         );
-        info!("sent transaction signature: {}", signature);
+        info!("sent transaction signature: {}", signature.clone());
         Ok(signature)
     }
 }
